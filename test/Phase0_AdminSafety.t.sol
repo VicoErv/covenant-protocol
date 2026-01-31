@@ -26,8 +26,6 @@ contract Phase0_AdminSafetyTest is BaseTest {
 
         // 2. HighRep users vote to fund it
         vm.prank(highRep1);
-        builderEngine.approveProposal(pid);
-        vm.prank(highRep2);
         builderEngine.approveProposal(pid); // Funded! 5 ether locked 
         
         // 3. Admin tries to resolve to SELF (stealing)
@@ -66,7 +64,6 @@ contract Phase0_AdminSafetyTest is BaseTest {
         // Fund it
         vm.deal(address(builderEngine), 10 ether);
         vm.prank(highRep1); builderEngine.approveProposal(pid);
-        vm.prank(highRep2); builderEngine.approveProposal(pid);
 
         vm.prank(alice); builderEngine.submitProof(pid, "p");
 

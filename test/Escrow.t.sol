@@ -13,16 +13,12 @@ contract EscrowTest is BaseTest {
     }
 
     function testEscrowLocksFunds() public {
-        // Treasury: 0.02 (High1+2 in setup) + 0.01 (Alice) = 0.03 ETH
-        assertEq(address(builderEngine).balance, 0.03 ether);
+        // Treasury from BaseTest: 100 ETH + (Bob+Alice join fees)
+        assertGe(address(builderEngine).balance, 100 ether);
         assertEq(builderEngine.lockedFunds(), 0);
 
-        // Vote 1
+        // Vote 1 (Quorum) -> Trigger lock
         vm.prank(highRep1);
-        builderEngine.approveProposal(0);
-
-        // Vote 2 (Quorum) -> Trigger lock
-        vm.prank(highRep2);
         builderEngine.approveProposal(0);
 
         // Check lock
@@ -32,14 +28,12 @@ contract EscrowTest is BaseTest {
     }
 
     function testRevertInsufficientTreasury() public {
-        // Panic submit idea requesting 100 ETH
+        // Panic submit idea requesting 1000 ETH
         vm.prank(alice);
-        builderEngine.submitProposal("Big Ask", 100 ether); // ID 1
+        builderEngine.submitProposal("Big Ask", 1000 ether); // ID 1
 
+        // Vote 1 (Quorum) should fail due to treasury
         vm.prank(highRep1);
-        builderEngine.approveProposal(1);
-
-        vm.prank(highRep2);
         vm.expectRevert("InsufficientTreasury");
         builderEngine.approveProposal(1);
     }

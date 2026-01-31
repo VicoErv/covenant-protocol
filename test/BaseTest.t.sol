@@ -46,6 +46,9 @@ contract BaseTest is Test {
         vm.prank(highRep2);
         covenantJoin.joinCovenant{value: 0.01 ether}();
         giveReputation(highRep2, 20 ether);
+
+        // Fund the engine treasury for payouts
+        vm.deal(address(builderEngine), 100 ether);
     }
     
     function giveReputation(address user, uint256 amount) internal {

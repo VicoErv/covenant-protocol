@@ -35,25 +35,19 @@ contract VotingTest is BaseTest {
         vm.prank(highRep1);
         builderEngine.approveProposal(0);
 
+        // Since QUORUM=1, it's now Status.Funded. Subsequent votes (even double) fail with NotPending.
         vm.prank(highRep1);
-        vm.expectRevert("AlreadyVoted");
+        vm.expectRevert("NotPending");
         builderEngine.approveProposal(0);
     }
 
     function testStatusChangeOnQuorum() public {
-        // Need 2 votes (Quorum)
+        // Need 1 vote (New Quorum)
         vm.prank(highRep1);
         builderEngine.approveProposal(0);
         
-        // Status still Pending
-        (,,,, BuilderEngine.Status status1,,) = builderEngine.proposals(0);
-        assertEq(uint(status1), uint(BuilderEngine.Status.Pending));
-
-        vm.prank(highRep2);
-        builderEngine.approveProposal(0);
-        
-        // Status -> Funded
-        (,,,, BuilderEngine.Status status2,,) = builderEngine.proposals(0);
-        assertEq(uint(status2), uint(BuilderEngine.Status.Funded));
+        // Status -> Funded immediately
+        (,,,, BuilderEngine.Status status,,) = builderEngine.proposals(0);
+        assertEq(uint(status), uint(BuilderEngine.Status.Funded));
     }
 }

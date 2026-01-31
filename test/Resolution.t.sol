@@ -14,7 +14,6 @@ contract ResolutionTest is BaseTest {
 
         // Fast forward to Funded
         vm.prank(highRep1); builderEngine.approveProposal(0);
-        vm.prank(highRep2); builderEngine.approveProposal(0);
 
         // Fast forward to Delivered
         vm.prank(alice);

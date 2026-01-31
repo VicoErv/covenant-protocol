@@ -15,7 +15,6 @@ contract EndToEndTest is BaseTest {
 
         // 3. Quorum Vote
         vm.prank(highRep1); builderEngine.approveProposal(0);
-        vm.prank(highRep2); builderEngine.approveProposal(0);
         
         // Verify Funded
         (,,,, BuilderEngine.Status status1,,) = builderEngine.proposals(0);

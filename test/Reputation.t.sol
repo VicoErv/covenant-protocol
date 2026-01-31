@@ -14,7 +14,6 @@ contract ReputationTest is BaseTest {
 
         // Fund & Deliver
         vm.prank(highRep1); builderEngine.approveProposal(0);
-        vm.prank(highRep2); builderEngine.approveProposal(0);
         vm.prank(alice); builderEngine.submitProof(0, "p");
     }
 

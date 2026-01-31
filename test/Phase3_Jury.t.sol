@@ -108,7 +108,6 @@ contract Phase3_JuryTest is BaseTest {
         
         vm.deal(address(builderEngine), 10 ether); 
         vm.prank(highRep1); builderEngine.approveProposal(pid);
-        vm.prank(highRep2); builderEngine.approveProposal(pid);
         
         vm.prank(submitter);
         builderEngine.submitProof(pid, "proof");

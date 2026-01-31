@@ -86,7 +86,6 @@ contract Phase1_MultisigTest is BaseTest {
         // Fund
         vm.deal(address(builderEngine), 10 ether);
         vm.prank(highRep1); builderEngine.approveProposal(pid);
-        vm.prank(highRep2); builderEngine.approveProposal(pid);
         
         // Deliver
         vm.prank(submitter);
