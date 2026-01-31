@@ -1,0 +1,62 @@
+services:
+  # 1. Local Blockchain Node
+  anvil:
+    build: ./foundry
+    ports:
+      - "8545:8545"
+    command: anvil --host 0.0.0.0 --block-time 2 --chain-id 31337
+
+  # 2. Contract Deployer (Ephemeral)
+  deployer:
+    build: ./foundry
+    volumes:
+      - ./:/app
+    working_dir: /app
+    environment:
+      - PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 # Anvil Account 0
+      - RPC_URL=http://anvil:8545
+    command: >
+      /bin/sh -c "
+      until cast block-number --rpc-url http://anvil:8545 > /dev/null 2>&1; do sleep 1; done;
+      forge script script/Deploy.s.sol:DeployScript --rpc-url http://anvil:8545 --broadcast;
+      "
+    depends_on:
+      - anvil
+
+  # 3. Backend API & Indexer
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - RPC_URL=http://anvil:8545
+      # Addresses will need to be dynamically set or hardcoded if deterministic.
+      # For this setup with Anvil, address is usually deterministic if nonce is 0.
+      # CovenantJoin: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+      # ReputationLedger: 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+      # BuilderEngine: 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+      - BUILDER_ENGINE_ADDRESS=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+      - REPUTATION_LEDGER_ADDRESS=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+    volumes:
+      - ./backend/proposals.db:/app/proposals.db
+      - ./out:/out # Mount artifacts for ABI loading
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      - anvil
+      - deployer
+
+  # 4. Frontend Web App
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80" # Map host 3000 to nginx 80
+    environment:
+      # Note: VITE env vars are embedded at BUILD time.
+      # So we need to ensure these args are passed during build or we use a runtime config solution.
+      # For simplicity here, we assume the build environment matches.
+      # BUT: Frontend runs in browser, so it needs localhost access to anvil/backend from HOST perspective.
+      - VITE_API_URL=http://localhost:8000
+      - VITE_BUILDER_ENGINE_ADDRESS=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+      - VITE_COVENANT_JOIN_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
+    depends_on:
+      - backend

@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+web3
+sqlalchemy
+pydantic
+python-multipart
+mnemonic

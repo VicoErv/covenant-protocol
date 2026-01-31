@@ -23,7 +23,7 @@ contract ResolutionTest is BaseTest {
 
     function testRevertNonAdminResolve() public {
         vm.prank(bob);
-        vm.expectRevert("OnlyAdmin");
+        vm.expectRevert("NotResolver");
         builderEngine.resolveProposal(0, true);
     }
 

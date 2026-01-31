@@ -21,6 +21,9 @@ contract BuilderEngine {
     CovenantJoin public covenantJoin;
     ReputationLedger public reputationLedger;
     address public owner;
+    address public resolver;
+    address public governance;
+    uint256 public adminExpiryBlock;
 
     uint256 public nextProposalId;
     mapping(uint256 => Proposal) public proposals;
@@ -43,6 +46,8 @@ contract BuilderEngine {
         covenantJoin = CovenantJoin(_covenantJoin);
         reputationLedger = ReputationLedger(_reputationLedger);
         owner = msg.sender;
+        resolver = msg.sender; // Initial resolver is admin
+        adminExpiryBlock = block.number + 100000; // ~2 weeks @ 12s block time (example)
     }
     
     receive() external payable {
@@ -57,6 +62,27 @@ contract BuilderEngine {
     modifier onlyOwner() {
         require(msg.sender == owner, "OnlyAdmin");
         _;
+    }
+
+    modifier onlyResolver() {
+        require(msg.sender == resolver, "NotResolver");
+        _;
+    }
+
+    function setResolver(address _resolver) external {
+        if (msg.sender == governance) {
+            resolver = _resolver;
+            return;
+        }
+        require(msg.sender == owner, "OnlyAdminOrGov");
+        require(block.number < adminExpiryBlock, "AdminExpired");
+        resolver = _resolver;
+    }
+
+    function setGovernance(address _governance) external onlyOwner {
+         // Admin can set governance initially (before expiry)
+         require(block.number < adminExpiryBlock, "AdminExpired");
+         governance = _governance;
     }
 
     function submitProposal(string calldata details, uint256 requestedAmount) external onlyMember {
@@ -111,7 +137,7 @@ contract BuilderEngine {
         emit ProofSubmitted(proposalId, proof);
     }
     
-    function resolveProposal(uint256 proposalId, bool success) external onlyOwner {
+    function resolveProposal(uint256 proposalId, bool success) external onlyResolver {
         Proposal storage p = proposals[proposalId];
         require(p.status == Status.Delivered, "NotDelivered");
         

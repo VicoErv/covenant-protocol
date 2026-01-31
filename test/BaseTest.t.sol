@@ -12,11 +12,12 @@ contract BaseTest is Test {
     BuilderEngine public builderEngine;
 
     address public admin = address(this);
-    address public alice = address(0x1);
-    address public bob = address(0x2);
-    address public charlie = address(0x3);
-    address public highRep1 = address(0x10);
-    address public highRep2 = address(0x11);
+
+    address public alice = makeAddr("alice");
+    address public bob = makeAddr("bob");
+    address public charlie = makeAddr("charlie");
+    address public highRep1 = makeAddr("highRep1");
+    address public highRep2 = makeAddr("highRep2");
 
     function setUp() public virtual {
         // Deploy contracts
