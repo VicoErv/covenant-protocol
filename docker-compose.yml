@@ -8,6 +8,7 @@ services:
       - RPC_URL=http://host.docker.internal:8545
       - BUILDER_ENGINE_ADDRESS=${BUILDER_ENGINE_ADDRESS}
       - REPUTATION_LEDGER_ADDRESS=${REPUTATION_LEDGER_ADDRESS}
+      - COVENANT_JOIN_ADDRESS=${COVENANT_JOIN_ADDRESS}
       - DB_PATH=/app/data/proposals.db
     volumes:
       - ./backend/data:/app/data
@@ -28,7 +29,7 @@ services:
       - "3000:80" # Map host 3000 to nginx 80
     environment:
       - VITE_API_URL=http://localhost:8000
-      - VITE_BUILDER_ENGINE_ADDRESS=0x9a676e781a523b5d0c0e43731313a708cb607508
-      - VITE_COVENANT_JOIN_ADDRESS=0xb7f8bc63bbcad18155201308c8f3540b07f84f5e
+      - VITE_BUILDER_ENGINE_ADDRESS=${BUILDER_ENGINE_ADDRESS}
+      - VITE_COVENANT_JOIN_ADDRESS=${COVENANT_JOIN_ADDRESS}
     extra_hosts:
       - "host.docker.internal:host-gateway"
