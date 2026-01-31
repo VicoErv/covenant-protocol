@@ -25,7 +25,7 @@ contract VotingTest is BaseTest {
     function testHighRepApprovalCounts() public {
         vm.prank(highRep1);
         builderEngine.approveProposal(0);
-        
+
         (,,,,,, uint256 approvalCount) = builderEngine.proposals(0);
         assertEq(approvalCount, 1);
         assertTrue(builderEngine.isApprovedBy(0, highRep1));
@@ -45,9 +45,9 @@ contract VotingTest is BaseTest {
         // Need 1 vote (New Quorum)
         vm.prank(highRep1);
         builderEngine.approveProposal(0);
-        
+
         // Status -> Funded immediately
         (,,,, BuilderEngine.Status status,,) = builderEngine.proposals(0);
-        assertEq(uint(status), uint(BuilderEngine.Status.Funded));
+        assertEq(uint256(status), uint256(BuilderEngine.Status.Funded));
     }
 }

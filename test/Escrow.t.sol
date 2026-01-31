@@ -24,7 +24,7 @@ contract EscrowTest is BaseTest {
         // Check lock
         assertEq(builderEngine.lockedFunds(), 0.005 ether);
         (,,,, BuilderEngine.Status status,,) = builderEngine.proposals(0);
-        assertEq(uint(status), uint(BuilderEngine.Status.Funded));
+        assertEq(uint256(status), uint256(BuilderEngine.Status.Funded));
     }
 
     function testRevertInsufficientTreasury() public {

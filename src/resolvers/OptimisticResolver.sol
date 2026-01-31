@@ -32,11 +32,11 @@ contract OptimisticResolver {
         require(msg.value == BOND_AMOUNT, "IncorrectBond");
         ResolutionRequest storage req = requests[proposalId];
         require(req.proposer == address(0), "AlreadyProposed");
-        
+
         req.proposer = msg.sender;
         req.outcome = outcome;
         req.timestamp = block.timestamp;
-        
+
         emit OutcomeProposed(proposalId, msg.sender, outcome);
     }
 
@@ -51,9 +51,9 @@ contract OptimisticResolver {
 
         req.disputed = true;
         req.disputer = msg.sender;
-        
+
         emit OutcomeDisputed(proposalId, msg.sender);
-        
+
         // Escalation Logic (Phase 3 placeholder)
         // For Phase 2, we just mark disputed and maybe freeze or revert
         // The spec says: "If disputed -> escalates to arbitration"
@@ -73,14 +73,14 @@ contract OptimisticResolver {
         require(block.timestamp >= req.timestamp + DISPUTE_WINDOW, "WindowActive");
 
         req.finalized = true;
-        
+
         // Return bond to proposer
-        (bool sent, ) = req.proposer.call{value: BOND_AMOUNT}("");
+        (bool sent,) = req.proposer.call{value: BOND_AMOUNT}("");
         require(sent, "BondReturnFailed");
 
         // Execute on Engine
         BuilderEngine(payable(builderEngine)).resolveProposal(proposalId, req.outcome);
-        
+
         emit OutcomeFinalized(proposalId, req.outcome);
     }
 }

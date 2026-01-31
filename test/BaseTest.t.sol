@@ -35,13 +35,13 @@ contract BaseTest is Test {
         vm.deal(charlie, 10 ether);
         vm.deal(highRep1, 10 ether);
         vm.deal(highRep2, 10 ether);
-        
+
         // Setup High Rep Users (Manual storage manipulation)
         // highRep1 join + Rep
         vm.prank(highRep1);
         covenantJoin.joinCovenant{value: 0.01 ether}();
         giveReputation(highRep1, 20 ether);
-        
+
         // highRep2 join + Rep
         vm.prank(highRep2);
         covenantJoin.joinCovenant{value: 0.01 ether}();
@@ -50,7 +50,7 @@ contract BaseTest is Test {
         // Fund the engine treasury for payouts
         vm.deal(address(builderEngine), 100 ether);
     }
-    
+
     function giveReputation(address user, uint256 amount) internal {
         // _reputation is at slot 0 of ReputationLedger
         bytes32 slot = keccak256(abi.encode(user, uint256(0)));

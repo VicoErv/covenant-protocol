@@ -14,19 +14,20 @@ contract EndToEndTest is BaseTest {
         builderEngine.submitProposal("Golden", 0.005 ether);
 
         // 3. Quorum Vote
-        vm.prank(highRep1); builderEngine.approveProposal(0);
-        
+        vm.prank(highRep1);
+        builderEngine.approveProposal(0);
+
         // Verify Funded
         (,,,, BuilderEngine.Status status1,,) = builderEngine.proposals(0);
-        assertEq(uint(status1), uint(BuilderEngine.Status.Funded));
+        assertEq(uint256(status1), uint256(BuilderEngine.Status.Funded));
 
         // 4. Deliver
         vm.prank(alice);
         builderEngine.submitProof(0, "ipfs://golden");
-        
+
         // Verify Delivered
         (,,,, BuilderEngine.Status status2,,) = builderEngine.proposals(0);
-        assertEq(uint(status2), uint(BuilderEngine.Status.Delivered));
+        assertEq(uint256(status2), uint256(BuilderEngine.Status.Delivered));
 
         // 5. Resolve
         uint256 alicPre = alice.balance;
@@ -36,11 +37,11 @@ contract EndToEndTest is BaseTest {
         // 6. Verify Outcome
         // Status Completed
         (,,,, BuilderEngine.Status status3,,) = builderEngine.proposals(0);
-        assertEq(uint(status3), uint(BuilderEngine.Status.Completed));
-        
+        assertEq(uint256(status3), uint256(BuilderEngine.Status.Completed));
+
         // Paid
         assertEq(alice.balance, alicPre + 0.005 ether);
-        
+
         // Rep Gained
         assertEq(reputationLedger.getReputation(alice), 5 ether);
     }

@@ -16,10 +16,10 @@ contract MembershipTest is BaseTest {
 
         vm.prank(alice);
         builderEngine.submitProposal("Legit Idea", 0.01 ether);
-        
-        (uint256 id, address submitter, , , BuilderEngine.Status status, , uint256 count) = builderEngine.proposals(0);
+
+        (uint256 id, address submitter,,, BuilderEngine.Status status,, uint256 count) = builderEngine.proposals(0);
         assertEq(id, 0);
         assertEq(submitter, alice);
-        assertEq(uint(status), uint(BuilderEngine.Status.Pending));
+        assertEq(uint256(status), uint256(BuilderEngine.Status.Pending));
     }
 }

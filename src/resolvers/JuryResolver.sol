@@ -37,8 +37,8 @@ contract JuryResolver {
     // But to keep it simple and focused on Jury tests:
     // I will implement `vote(proposalId, support)`
     // And `resolve(proposalId)`
-    
-    // Assume someone (OptResolver) triggers dispute. 
+
+    // Assume someone (OptResolver) triggers dispute.
     function openDispute(uint256 proposalId) external {
         // Validation omitted for MVP
         Dispute storage d = disputes[proposalId];
@@ -50,7 +50,7 @@ contract JuryResolver {
         Dispute storage d = disputes[proposalId];
         require(d.active, "NoActiveDispute");
         require(!d.hasVoted[msg.sender], "AlreadyVoted");
-        
+
         uint256 rep = reputationLedger.getReputation(msg.sender);
         require(rep >= MIN_REP, "LowReputation");
         require(msg.value == JUROR_BOND, "BondRequired");
@@ -60,9 +60,9 @@ contract JuryResolver {
         d.jurors.push(msg.sender);
 
         if (support) {
-            d.votesForTrue++; // Weighted by 1 for MVP or Rep? 
+            d.votesForTrue++; // Weighted by 1 for MVP or Rep?
             // "Jurors weighted by reputation" -> d.votesForTrue += rep;
-            // Let's use simple count for MVP or implicit weight? 
+            // Let's use simple count for MVP or implicit weight?
             // Unit test: "Jurors must have minimum reputation" (Checked)
             // Unit test: "Majority outcome resolves"
         } else {
@@ -74,7 +74,7 @@ contract JuryResolver {
         Dispute storage d = disputes[proposalId];
         require(d.active, "NoActiveDispute");
         require(!d.resolved, "AlreadyResolved");
-        
+
         bool outcome = d.votesForTrue > d.votesForFalse;
         d.resolved = true;
         d.active = false;
@@ -83,13 +83,13 @@ contract JuryResolver {
         BuilderEngine(payable(builderEngine)).resolveProposal(proposalId, outcome);
 
         // Penalize/Reward
-        for (uint i = 0; i < d.jurors.length; i++) {
+        for (uint256 i = 0; i < d.jurors.length; i++) {
             address juror = d.jurors[i];
             bool choice = d.voteChoice[juror];
-            
+
             if (choice == outcome) {
                 // Return bond
-                (bool sent, ) = juror.call{value: JUROR_BOND}("");
+                (bool sent,) = juror.call{value: JUROR_BOND}("");
                 require(sent, "BondReturnFailed");
                 // Reward? (Not implemented in MVP)
             } else {

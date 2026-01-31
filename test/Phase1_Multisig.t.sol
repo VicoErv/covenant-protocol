@@ -10,16 +10,16 @@ contract Phase1_MultisigTest is BaseTest {
 
     function setUp() public override {
         super.setUp();
-        
+
         // Prepare signers
         signers.push(alice);
         signers.push(bob);
         signers.push(charlie); // 3 signers
-        
+
         // Deploy MultisigResolver with 2-of-3 threshold
         vm.prank(admin);
         multisig = new MultisigResolver(address(builderEngine), signers, 2);
-        
+
         // Update BuilderEngine resolver to be the multisig contract
         vm.prank(admin);
         builderEngine.setResolver(address(multisig));
@@ -28,45 +28,45 @@ contract Phase1_MultisigTest is BaseTest {
     function test_P1_1_SingleSignerCannotResolve() public {
         // Create proposal
         uint256 pid = _createDeliveredProposal(alice);
-        
+
         // Alice proposes to resolve true
         vm.prank(alice);
         uint256 txId = multisig.proposeResolution(pid, true);
-        
+
         // Check state
         (uint256 propId, bool outcome, uint256 approvals, bool executed) = _getTxInfo(txId);
         assertEq(executed, false);
         assertEq(approvals, 1);
-        
-        (, , , , BuilderEngine.Status status, , ) = builderEngine.proposals(pid);
-        assertEq(uint(status), uint(BuilderEngine.Status.Delivered), "Status should be Delivered");
+
+        (,,,, BuilderEngine.Status status,,) = builderEngine.proposals(pid);
+        assertEq(uint256(status), uint256(BuilderEngine.Status.Delivered), "Status should be Delivered");
     }
 
     function test_P1_2_ThresholdResolves() public {
         uint256 pid = _createDeliveredProposal(alice);
-        
+
         // Alice proposes
         vm.prank(alice);
         uint256 txId = multisig.proposeResolution(pid, true);
-        
+
         // Bob confirms
         vm.prank(bob);
         multisig.confirmResolution(txId);
-        
+
         // Should be executed now
-         (,,, bool executed) = _getTxInfo(txId);
+        (,,, bool executed) = _getTxInfo(txId);
         assertTrue(executed, "Tx should be executed");
-        
-        (, , , , BuilderEngine.Status status, , ) = builderEngine.proposals(pid);
-        assertEq(uint(status), uint(BuilderEngine.Status.Completed), "Status should be Completed");
+
+        (,,,, BuilderEngine.Status status,,) = builderEngine.proposals(pid);
+        assertEq(uint256(status), uint256(BuilderEngine.Status.Completed), "Status should be Completed");
     }
 
     function test_P1_3_NonSignerCannotConfirm() public {
         uint256 pid = _createDeliveredProposal(alice);
-        
+
         vm.prank(alice);
         uint256 txId = multisig.proposeResolution(pid, true);
-        
+
         vm.prank(highRep1); // Not a signer
         vm.expectRevert("NotSigner");
         multisig.confirmResolution(txId);
@@ -82,15 +82,16 @@ contract Phase1_MultisigTest is BaseTest {
         vm.prank(submitter);
         builderEngine.submitProposal("task", 1 ether);
         uint256 pid = builderEngine.nextProposalId() - 1;
-        
+
         // Fund
         vm.deal(address(builderEngine), 10 ether);
-        vm.prank(highRep1); builderEngine.approveProposal(pid);
-        
+        vm.prank(highRep1);
+        builderEngine.approveProposal(pid);
+
         // Deliver
         vm.prank(submitter);
         builderEngine.submitProof(pid, "proof");
-        
+
         return pid;
     }
 

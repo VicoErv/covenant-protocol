@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-// Import removed 
+// Import removed
 // Wait, I should use OpenZeppelin for Ownable or implement it?
 // The user said "Minimal MVP". I can implement simple ownership/auth.
 // Start simple.

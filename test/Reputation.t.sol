@@ -8,13 +8,15 @@ contract ReputationTest is BaseTest {
         super.setUp();
         vm.prank(alice);
         covenantJoin.joinCovenant{value: 0.01 ether}();
-        
+
         vm.prank(alice);
         builderEngine.submitProposal("Job", 0.005 ether);
 
         // Fund & Deliver
-        vm.prank(highRep1); builderEngine.approveProposal(0);
-        vm.prank(alice); builderEngine.submitProof(0, "p");
+        vm.prank(highRep1);
+        builderEngine.approveProposal(0);
+        vm.prank(alice);
+        builderEngine.submitProof(0, "p");
     }
 
     function testReputationGainOnSuccess() public {
@@ -35,7 +37,7 @@ contract ReputationTest is BaseTest {
         uint256 newRep = reputationLedger.getReputation(alice);
         assertEq(newRep, 0);
     }
-    
+
     function testReputationImmutableDirectly() public {
         vm.prank(alice);
         vm.expectRevert("Only BuilderEngine");

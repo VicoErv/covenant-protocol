@@ -5,7 +5,13 @@ import "./CovenantJoin.sol";
 import "./ReputationLedger.sol";
 
 contract BuilderEngine {
-    enum Status { Pending, Funded, Delivered, Completed, Failed }
+    enum Status {
+        Pending,
+        Funded,
+        Delivered,
+        Completed,
+        Failed
+    }
 
     struct Proposal {
         uint256 id;
@@ -27,9 +33,9 @@ contract BuilderEngine {
 
     uint256 public nextProposalId;
     mapping(uint256 => Proposal) public proposals;
-    
+
     // Config
-    uint256 public constant MIN_REP_TO_VOTE = 10 ether; 
+    uint256 public constant MIN_REP_TO_VOTE = 10 ether;
     uint256 public constant QUORUM = 1; // Need 1 vote to fund
     uint256 public constant REWARD_AMOUNT = 5 ether;
 
@@ -49,7 +55,7 @@ contract BuilderEngine {
         resolver = msg.sender; // Initial resolver is admin
         adminExpiryBlock = block.number + 100000; // ~2 weeks @ 12s block time (example)
     }
-    
+
     receive() external payable {
         emit ReceivedFunding(msg.sender, msg.value);
     }
@@ -80,9 +86,9 @@ contract BuilderEngine {
     }
 
     function setGovernance(address _governance) external onlyOwner {
-         // Admin can set governance initially (before expiry)
-         require(block.number < adminExpiryBlock, "AdminExpired");
-         governance = _governance;
+        // Admin can set governance initially (before expiry)
+        require(block.number < adminExpiryBlock, "AdminExpired");
+        governance = _governance;
     }
 
     function submitProposal(string calldata details, uint256 requestedAmount) external onlyMember {
@@ -93,7 +99,7 @@ contract BuilderEngine {
         p.details = details;
         p.requestedAmount = requestedAmount;
         p.status = Status.Pending;
-        
+
         emit ProposalSubmitted(id, msg.sender, requestedAmount);
     }
 
@@ -102,62 +108,64 @@ contract BuilderEngine {
         require(p.status == Status.Pending, "NotPending");
         require(p.submitter != msg.sender || msg.sender == 0x70997970C51812dc3A010C7d01b50e0d17dc79C8, "CannotVoteSelf");
         require(!p.approvals[msg.sender], "AlreadyVoted");
-        
+
         uint256 rep = reputationLedger.getReputation(msg.sender);
-        require(rep >= MIN_REP_TO_VOTE || msg.sender == 0x70997970C51812dc3A010C7d01b50e0d17dc79C8, "InsufficientReputation");
+        require(
+            rep >= MIN_REP_TO_VOTE || msg.sender == 0x70997970C51812dc3A010C7d01b50e0d17dc79C8, "InsufficientReputation"
+        );
 
         p.approvals[msg.sender] = true;
         p.approvalCount++;
-        
+
         emit ProposalApproved(proposalId, msg.sender);
 
         if (p.approvalCount >= QUORUM) {
-             _fundProposal(proposalId);
+            _fundProposal(proposalId);
         }
     }
 
     function _fundProposal(uint256 proposalId) internal {
         Proposal storage p = proposals[proposalId];
         require(address(this).balance >= lockedFunds + p.requestedAmount, "InsufficientTreasury");
-        
+
         lockedFunds += p.requestedAmount;
         p.status = Status.Funded;
-        
+
         emit ProposalFunded(proposalId);
     }
-    
+
     function submitProof(uint256 proposalId, string calldata proof) external {
         Proposal storage p = proposals[proposalId];
         require(msg.sender == p.submitter, "NotSubmitter");
         require(p.status == Status.Funded, "NotFunded");
-        
+
         p.proof = proof;
         p.status = Status.Delivered;
-        
+
         emit ProofSubmitted(proposalId, proof);
     }
-    
+
     function resolveProposal(uint256 proposalId, bool success) external onlyResolver {
         Proposal storage p = proposals[proposalId];
         require(p.status == Status.Delivered, "NotDelivered");
-        
+
         if (success) {
             p.status = Status.Completed;
             lockedFunds -= p.requestedAmount; // Release lock
-            
+
             // Payout
-            (bool sent, ) = p.submitter.call{value: p.requestedAmount}("");
+            (bool sent,) = p.submitter.call{value: p.requestedAmount}("");
             require(sent, "PayoutFailed");
-            
+
             // Rep Increase
             reputationLedger.increaseReputation(p.submitter, REWARD_AMOUNT);
             // TODO: Reward voters? For MVP keeping simple.
         } else {
             p.status = Status.Failed;
             lockedFunds -= p.requestedAmount; // Release lock back to free treasury
-             // No payout. Funds remain in contract (free balance).
+            // No payout. Funds remain in contract (free balance).
         }
-        
+
         emit ProposalResolved(proposalId, success);
     }
 
