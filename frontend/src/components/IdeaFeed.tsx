@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useQuery } from '@tanstack/react-query';
 import { formatEther } from 'viem';
 import { Coins, TrendingUp } from 'lucide-react';
 import BuilderEngineABI from '../abis/BuilderEngine.json';
@@ -30,8 +30,6 @@ const statusConfig = {
 };
 
 export default function IdeaFeed() {
-    const [proposals, setProposals] = useState<Proposal[]>([]);
-    const [loading, setLoading] = useState(true);
     const { address } = useAccount();
     const { writeContract, data: hash } = useWriteContract();
     const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
@@ -42,22 +40,14 @@ export default function IdeaFeed() {
         functionName: 'resolver',
     });
 
-    useEffect(() => {
-        fetchProposals();
-        const interval = setInterval(fetchProposals, 5000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const fetchProposals = async () => {
-        try {
+    const { data: proposals = [], isLoading: loading, refetch } = useQuery<Proposal[]>({
+        queryKey: ['proposals'],
+        queryFn: async () => {
             const res = await axios.get(`${API_URL}/feed`);
-            setProposals(res.data);
-            setLoading(false);
-        } catch (err) {
-            console.error('Failed to fetch proposals:', err);
-            setLoading(false);
-        }
-    };
+            return res.data;
+        },
+        refetchInterval: 5000,
+    });
 
     const handleApprove = (proposalId: number) => {
         if (!address) return;
@@ -166,7 +156,7 @@ export default function IdeaFeed() {
                                 {/* Resolution Control */}
                                 {p.status === 2 && !!resolverAddress && !!address && (resolverAddress as string).toLowerCase() === address.toLowerCase() && (
                                     <div className="mt-3" style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                                        <ResolutionControl proposalId={p.chain_id} onResolve={fetchProposals} />
+                                        <ResolutionControl proposalId={p.chain_id} onResolve={refetch} />
                                     </div>
                                 )}
                             </div>

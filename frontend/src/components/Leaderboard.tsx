@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useQuery } from '@tanstack/react-query';
 import { formatEther } from 'viem';
 import { Sparkles } from 'lucide-react';
 
@@ -12,25 +12,14 @@ interface User {
 }
 
 export default function Leaderboard() {
-    const [users, setUsers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetchLeaderboard();
-        const interval = setInterval(fetchLeaderboard, 10000);
-        return () => clearInterval(interval);
-    }, []);
-
-    const fetchLeaderboard = async () => {
-        try {
+    const { data: users = [], isLoading: loading } = useQuery<User[]>({
+        queryKey: ['leaderboard'],
+        queryFn: async () => {
             const res = await axios.get(`${API_URL}/leaderboard`);
-            setUsers(res.data);
-            setLoading(false);
-        } catch (err) {
-            console.error('Failed to fetch leaderboard:', err);
-            setLoading(false);
-        }
-    };
+            return res.data;
+        },
+        refetchInterval: 10000,
+    });
 
     if (loading) {
         return (
