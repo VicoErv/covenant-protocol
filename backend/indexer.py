@@ -10,6 +10,7 @@ from database import SessionLocal, Proposal, User, engine
 RPC_URL = os.getenv("RPC_URL", "http://127.0.0.1:8545")
 BUILDER_ENGINE_ADDRESS = Web3.to_checksum_address(os.getenv("BUILDER_ENGINE_ADDRESS")) if os.getenv("BUILDER_ENGINE_ADDRESS") else None
 REPUTATION_LEDGER_ADDRESS = Web3.to_checksum_address(os.getenv("REPUTATION_LEDGER_ADDRESS")) if os.getenv("REPUTATION_LEDGER_ADDRESS") else None
+COVENANT_JOIN_ADDRESS = Web3.to_checksum_address(os.getenv("COVENANT_JOIN_ADDRESS")) if os.getenv("COVENANT_JOIN_ADDRESS") else None
 
 if not BUILDER_ENGINE_ADDRESS:
     print("Warning: BUILDER_ENGINE_ADDRESS not set")
@@ -17,7 +18,11 @@ if not BUILDER_ENGINE_ADDRESS:
 if not REPUTATION_LEDGER_ADDRESS:
     print("Warning: REPUTATION_LEDGER_ADDRESS not set")
 
+if not COVENANT_JOIN_ADDRESS:
+    print("Warning: COVENANT_JOIN_ADDRESS not set")
+
 web3 = Web3(Web3.HTTPProvider(RPC_URL))
+LAST_BLOCK = 0 # Global tracker for blocks
 
 def load_abi(name):
     path = f"../out/{name}.sol/{name}.json"
@@ -38,51 +43,50 @@ def get_contract(name, address):
     abi = load_abi(name)
     return web3.eth.contract(address=chk_address, abi=abi)
 
-def process_events(db: Session):
+def process_events(db: Session, from_block: int):
     builder_engine = get_contract("BuilderEngine", BUILDER_ENGINE_ADDRESS)
     rep_ledger = get_contract("ReputationLedger", REPUTATION_LEDGER_ADDRESS)
+    cov_join = get_contract("CovenantJoin", COVENANT_JOIN_ADDRESS)
     
     if not builder_engine:
         return
 
-    # In a real indexer, we track last_processed_block in DB or file.
-    # Here we just poll latest blocks for MVP simplicity or use filter.
-    # Let's use get_logs with a simple loop for now.
-    
-    current_block = web3.eth.block_number
-    # For MVP, just looking at recent history or simpler: use event filters
-    # Proper indexing is complex. I'll implement a simple "Listen Loop"
-    
     # 1. ProposalSubmitted
-    logs = builder_engine.events.ProposalSubmitted().get_logs(from_block=0)
+    logs = builder_engine.events.ProposalSubmitted().get_logs(from_block=from_block)
     for log in logs:
         handle_proposal_submitted(db, log)
         
     # 2. ProposalApproved
-    logs = builder_engine.events.ProposalApproved().get_logs(from_block=0)
+    logs = builder_engine.events.ProposalApproved().get_logs(from_block=from_block)
     for log in logs:
         handle_proposal_approved(db, log)
 
     # 3. ProposalFunded
-    logs = builder_engine.events.ProposalFunded().get_logs(from_block=0)
+    logs = builder_engine.events.ProposalFunded().get_logs(from_block=from_block)
     for log in logs:
         handle_proposal_funded(db, log)
         
     # 4. ProofSubmitted
-    logs = builder_engine.events.ProofSubmitted().get_logs(from_block=0)
+    logs = builder_engine.events.ProofSubmitted().get_logs(from_block=from_block)
     for log in logs:
         handle_proof_submitted(db, log)
 
     # 5. ProposalResolved
-    logs = builder_engine.events.ProposalResolved().get_logs(from_block=0)
+    logs = builder_engine.events.ProposalResolved().get_logs(from_block=from_block)
     for log in logs:
         handle_proposal_resolved(db, log)
 
     # Reputation Updates
     if rep_ledger:
-        logs = rep_ledger.events.ReputationUpdated().get_logs(from_block=0)
+        logs = rep_ledger.events.ReputationUpdated().get_logs(from_block=from_block)
         for log in logs:
             handle_reputation_updated(db, log)
+
+    # Membership Updates
+    if cov_join:
+        logs = cov_join.events.MemberJoined().get_logs(from_block=from_block)
+        for log in logs:
+            handle_member_joined(db, log)
 
 def handle_proposal_submitted(db: Session, log):
     pid = log.args.id
@@ -114,9 +118,13 @@ def handle_proposal_submitted(db: Session, log):
 
 def handle_proposal_approved(db: Session, log):
     pid = log.args.id
+    # Fetch actual count from contract for idempotency
+    builder_engine = get_contract("BuilderEngine", BUILDER_ENGINE_ADDRESS)
+    p_data = builder_engine.functions.proposals(pid).call()
+    
     proposal = db.query(Proposal).filter(Proposal.chain_id == pid).first()
     if proposal:
-        proposal.approval_count += 1
+        proposal.approval_count = p_data[6] # approvalCount is at index 6
         db.commit()
 
 def handle_proposal_funded(db: Session, log):
@@ -157,13 +165,32 @@ def handle_reputation_updated(db: Session, log):
         user.reputation = str(new_amount)
     db.commit()
 
+def handle_member_joined(db: Session, log):
+    member_addr = log.args.member
+    
+    user = db.query(User).filter(User.address == member_addr).first()
+    if not user:
+        user = User(address=member_addr, is_member=True)
+        db.add(user)
+    else:
+        user.is_member = True
+    db.commit()
+
 def start_indexer():
+    global LAST_BLOCK
     print("Indexer started...", flush=True)
+    # Initialize with current block so we only process new events moving forward
+    # Or keep at 0 if you want to sync existing history on boot
+    LAST_BLOCK = web3.eth.block_number
+    
     while True:
         try:
-            db = SessionLocal()
-            process_events(db)
-            db.close()
+            current_block = web3.eth.block_number
+            if current_block > LAST_BLOCK:
+                db = SessionLocal()
+                process_events(db, LAST_BLOCK + 1)
+                db.close()
+                LAST_BLOCK = current_block
         except Exception as e:
             print(f"Indexer error: {e}", flush=True)
         time.sleep(5) # Poll every 5s
