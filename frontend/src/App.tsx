@@ -1,11 +1,29 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount, useReadContract } from 'wagmi';
 import { useState } from 'react';
+import { Sparkles } from 'lucide-react';
 import IdeaFeed from './components/IdeaFeed';
 import SubmitForm from './components/SubmitForm';
 import Leaderboard from './components/Leaderboard';
+import ReputationLedgerABI from './abis/ReputationLedger.json';
+
+const REPUTATION_LEDGER_ADDRESS = import.meta.env.VITE_REPUTATION_LEDGER_ADDRESS as `0x${string}`;
 
 function App() {
   const [activeTab, setActiveTab] = useState<'feed' | 'submit' | 'leaderboard'>('feed');
+  const { address, isConnected } = useAccount();
+
+  const { data: reputation } = useReadContract({
+    address: REPUTATION_LEDGER_ADDRESS,
+    abi: ReputationLedgerABI.abi,
+    functionName: 'getReputation',
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address,
+    }
+  });
+
+  const formattedRep = reputation ? formatEther(reputation as bigint) : '0';
 
   return (
     <div style={{ minHeight: '100vh', paddingTop: '2rem', paddingBottom: '4rem' }}>
@@ -19,7 +37,17 @@ function App() {
               </h1>
               <p className="opacity-70">Decentralized Builder Engine</p>
             </div>
-            <ConnectButton />
+            <div className="flex items-center gap-4">
+              {isConnected && (
+                <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-sm">
+                  <Sparkles size={16} className="text-yellow-400" />
+                  <span className="text-sm font-semibold">
+                    {Number(formattedRep).toLocaleString(undefined, { maximumFractionDigits: 2 })} REP
+                  </span>
+                </div>
+              )}
+              <ConnectButton />
+            </div>
           </div>
         </div>
       </header>
