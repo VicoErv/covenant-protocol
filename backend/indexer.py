@@ -104,15 +104,19 @@ def handle_proposal_submitted(db: Session, log):
         proposal = Proposal(
             chain_id=pid,
             submitter=submitter,
-            details=p_data[2], # details string
+            details=p_data[2],
             requested_amount=str(p_data[3]),
-            status=p_data[4], # status enum
+            status=p_data[4],
             approval_count=p_data[6]
         )
         db.add(proposal)
     else:
-        # Update just in case
+        # Update all fields to handle ID reuse after redeploy
+        proposal.submitter = submitter
+        proposal.details = p_data[2]
+        proposal.requested_amount = str(p_data[3])
         proposal.status = p_data[4]
+        proposal.approval_count = p_data[6]
     
     db.commit()
 
