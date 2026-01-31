@@ -30,6 +30,11 @@ contract DeployScript is Script {
         covenantJoin.setBuilderEngine(address(builderEngine));
         console.log("CovenantJoin linked to BuilderEngine Treasury");
 
+        // Fund Treasury for testing
+        (bool success, ) = address(builderEngine).call{value: 10 ether}("");
+        require(success, "Treasury funding failed");
+        console.log("Treasury funded with 10 ETH");
+
         vm.stopBroadcast();
     }
 }
