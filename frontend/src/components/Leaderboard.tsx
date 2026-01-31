@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { formatEther } from 'viem';
+import { Sparkles } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -55,7 +57,7 @@ export default function Leaderboard() {
             ) : (
                 <div style={{ display: 'grid', gap: '1rem' }}>
                     {users.map((user, idx) => {
-                        const reputation = (Number(user.reputation) / 1e18).toFixed(2);
+                        const reputation = formatEther(BigInt(user.reputation));
                         const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : null;
 
                         return (
@@ -94,8 +96,11 @@ export default function Leaderboard() {
 
                                     {/* Reputation */}
                                     <div className="text-right">
-                                        <div className="text-2xl font-bold">{reputation}</div>
-                                        <div className="text-sm opacity-70">REP</div>
+                                        <div className="text-2xl font-bold flex items-center justify-end gap-1">
+                                            {Number(reputation).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                                            <Sparkles size={16} className="text-yellow-400" />
+                                        </div>
+                                        <div className="text-sm opacity-70 font-medium">REP</div>
                                     </div>
                                 </div>
                             </div>

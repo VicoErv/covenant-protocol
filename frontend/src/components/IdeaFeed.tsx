@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { formatEther } from 'viem';
+import { Coins, TrendingUp } from 'lucide-react';
 import BuilderEngineABI from '../abis/BuilderEngine.json';
 import ProofUpload from './ProofUpload';
 import ResolutionControl from './ResolutionControl';
@@ -114,14 +116,20 @@ export default function IdeaFeed() {
                                 {/* Stats */}
                                 <div className="flex gap-4 mb-3" style={{ padding: '1rem 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                                     <div>
-                                        <div className="text-sm opacity-70 mb-1">Bounty</div>
-                                        <div className="font-bold">
-                                            {(Number(p.requested_amount) / 1e18).toFixed(4)} ETH
+                                        <div className="text-sm opacity-70 mb-1 flex items-center gap-1">
+                                            <Coins size={14} className="text-yellow-400" />
+                                            Bounty
+                                        </div>
+                                        <div className="font-bold text-lg text-white">
+                                            {formatEther(BigInt(p.requested_amount))} ETH
                                         </div>
                                     </div>
                                     <div>
-                                        <div className="text-sm opacity-70 mb-1">Approvals</div>
-                                        <div className="font-bold">{p.approval_count}</div>
+                                        <div className="text-sm opacity-70 mb-1 flex items-center gap-1">
+                                            <TrendingUp size={14} className="text-green-400" />
+                                            Approvals
+                                        </div>
+                                        <div className="font-bold text-lg text-white">{p.approval_count}</div>
                                     </div>
                                 </div>
 
