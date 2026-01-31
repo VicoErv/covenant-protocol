@@ -20,14 +20,14 @@ fi
 # 2. Deploy Contracts
 echo "📜 Deploying contracts natively..."
 export PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-forge script script/Deploy.s.sol:DeployScript --rpc-url http://127.0.0.1:8545 --broadcast
+~/.foundry/bin/forge script script/Deploy.s.sol:DeployScript --rpc-url http://127.0.0.1:8545 --broadcast
 
 # 3. Extract Addresses and Update Environment
 echo "📝 Syncing contract addresses..."
 RUN_FILE="broadcast/Deploy.s.sol/31337/run-latest.json"
-export COVENANT_JOIN_ADDRESS=$(grep -A 1 "CovenantJoin" $RUN_FILE | grep -m 1 "contractAddress" | cut -d '"' -f 4)
-export REPUTATION_LEDGER_ADDRESS=$(grep -A 1 "ReputationLedger" $RUN_FILE | grep -m 1 "contractAddress" | cut -d '"' -f 4)
-export BUILDER_ENGINE_ADDRESS=$(grep -A 1 "BuilderEngine" $RUN_FILE | grep -m 1 "contractAddress" | cut -d '"' -f 4)
+export COVENANT_JOIN_ADDRESS=$(jq -r '.transactions[] | select(.contractName == "CovenantJoin") | .contractAddress' $RUN_FILE | head -n 1)
+export REPUTATION_LEDGER_ADDRESS=$(jq -r '.transactions[] | select(.contractName == "ReputationLedger") | .contractAddress' $RUN_FILE | head -n 1)
+export BUILDER_ENGINE_ADDRESS=$(jq -r '.transactions[] | select(.contractName == "BuilderEngine") | .contractAddress' $RUN_FILE | head -n 1)
 
 # Create frontend .env for native dev as well
 cat <<EOF > frontend/.env
