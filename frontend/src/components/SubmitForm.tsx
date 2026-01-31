@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { parseEther } from 'viem';
 import BuilderEngineABI from '../abis/BuilderEngine.json';
@@ -12,21 +12,27 @@ export default function SubmitForm() {
     const [amount, setAmount] = useState('');
     const { address } = useAccount();
     const { writeContract, data: hash } = useWriteContract();
-    const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
+    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
 
-    const { data: isMember } = useReadContract({
+    const { data: isMember, refetch } = useReadContract({
         address: COVENANT_JOIN_ADDRESS,
         abi: CovenantJoinABI.abi,
         functionName: 'isMember',
         args: address ? [address] : undefined,
     });
 
+    useEffect(() => {
+        if (isSuccess) {
+            refetch();
+        }
+    }, [isSuccess, refetch]);
+
     const handleJoin = () => {
         writeContract({
             address: COVENANT_JOIN_ADDRESS,
             abi: CovenantJoinABI.abi,
             functionName: 'joinCovenant',
-            value: 0n, // Set to 0 for test mode
+            value: 0n,
         });
     };
 
@@ -43,70 +49,98 @@ export default function SubmitForm() {
     };
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <h2 className="text-3xl font-bold text-white mb-6">Submit Idea</h2>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <h2 className="text-3xl font-bold text-gradient mb-4 text-center">✨ Submit Your Idea</h2>
 
             {!address ? (
-                <div className="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-8 text-center">
-                    <p className="text-gray-300 mb-4">Connect your wallet to submit ideas</p>
+                <div className="card text-center">
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔐</div>
+                    <h3 className="text-xl font-bold mb-2">Wallet Required</h3>
+                    <p className="opacity-70">Connect your wallet to submit ideas</p>
                 </div>
             ) : (
                 <>
+                    {/* Membership Status */}
                     {isMember ? (
-                        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mb-6 text-center">
-                            <p className="text-green-400 font-medium font-sm">✓ You are an active Covenant Member</p>
+                        <div className="card mb-3" style={{ background: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.3)' }}>
+                            <div className="flex items-center gap-3">
+                                <span style={{ fontSize: '2rem' }}>✓</span>
+                                <div>
+                                    <div className="font-bold" style={{ color: '#4ade80' }}>Active Member</div>
+                                    <div className="text-sm opacity-70">You can submit and approve proposals</div>
+                                </div>
+                            </div>
                         </div>
                     ) : (
-                        <div className="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6 mb-6 text-center">
-                            <h3 className="text-lg font-semibold text-white mb-2">Join the Covenant</h3>
-                            <p className="text-gray-400 mb-4">You need to join before submitting or approving ideas.</p>
+                        <div className="card mb-3 text-center">
+                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🤝</div>
+                            <h3 className="text-lg font-bold mb-2">Join the Covenant</h3>
+                            <p className="opacity-70 mb-3">Become a member to submit ideas</p>
                             <button
                                 onClick={handleJoin}
                                 disabled={isConfirming}
-                                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-all"
+                                className="btn btn-primary"
                             >
-                                {isConfirming ? 'Joining...' : 'Join for Free (Test Mode)'}
+                                {isConfirming ? 'Joining...' : '🚀 Join for Free'}
                             </button>
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6">
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                                Idea Details
+                    {/* Submission Form */}
+                    <form onSubmit={handleSubmit} className="card">
+                        <div className="mb-3">
+                            <label className="font-semibold mb-2" style={{ display: 'block' }}>
+                                💡 Idea Details
                             </label>
                             <textarea
                                 value={details}
                                 onChange={(e) => setDetails(e.target.value)}
-                                className="w-full px-4 py-3 bg-black/30 border border-purple-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                                rows={4}
+                                className="input"
+                                rows={5}
                                 placeholder="Describe your idea..."
                                 required
+                                style={{ resize: 'vertical' }}
                             />
+                            <div className="text-sm opacity-50 mt-1">
+                                {details.length}/500 characters
+                            </div>
                         </div>
 
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
-                                Requested Bounty (ETH)
+                        <div className="mb-4">
+                            <label className="font-semibold mb-2" style={{ display: 'block' }}>
+                                💎 Requested Bounty (ETH)
                             </label>
                             <input
                                 type="number"
                                 step="0.001"
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
-                                className="w-full px-4 py-3 bg-black/30 border border-purple-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                                className="input"
                                 placeholder="0.1"
                                 required
                             />
+                            {amount && (
+                                <div className="text-sm opacity-70 mt-1">
+                                    ≈ ${(parseFloat(amount) * 2500).toFixed(2)} USD (estimated)
+                                </div>
+                            )}
                         </div>
 
                         <button
                             type="submit"
-                            disabled={isConfirming}
-                            className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-lg font-medium transition-all shadow-lg shadow-purple-500/50"
+                            disabled={isConfirming || !details || !amount}
+                            className="btn btn-primary w-full"
                         >
-                            {isConfirming ? 'Submitting...' : 'Submit Proposal'}
+                            {isConfirming ? '⏳ Submitting...' : '🚀 Submit Proposal'}
                         </button>
+
+                        <div className="mt-4" style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                            <div className="text-sm opacity-70">
+                                <p className="mb-1">• Your proposal will be visible to all members</p>
+                                <p className="mb-1">• High-reputation members can approve your proposal</p>
+                                <p>• Once approved and funded, deliver proof to claim the bounty</p>
+                            </div>
+                        </div>
                     </form>
                 </>
             )}

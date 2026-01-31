@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Trophy } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -12,6 +11,7 @@ interface User {
 
 export default function Leaderboard() {
     const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchLeaderboard();
@@ -23,65 +23,93 @@ export default function Leaderboard() {
         try {
             const res = await axios.get(`${API_URL}/leaderboard`);
             setUsers(res.data);
+            setLoading(false);
         } catch (err) {
             console.error('Failed to fetch leaderboard:', err);
+            setLoading(false);
         }
     };
 
+    if (loading) {
+        return (
+            <div>
+                <h2 className="text-3xl font-bold text-gradient mb-4">🏆 Leaderboard</h2>
+                <div className="card">Loading leaderboard...</div>
+            </div>
+        );
+    }
+
     return (
-        <div className="max-w-4xl mx-auto">
-            <div className="flex items-center gap-3 mb-6">
-                <Trophy className="w-8 h-8 text-yellow-400" />
-                <h2 className="text-3xl font-bold text-white">Reputation Leaderboard</h2>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-3xl font-bold text-gradient">🏆 Leaderboard</h2>
+                <span className="opacity-70">{users.length} members</span>
             </div>
 
-            <div className="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg overflow-hidden">
-                <table className="w-full">
-                    <thead className="bg-black/30 border-b border-purple-500/20">
-                        <tr>
-                            <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Rank</th>
-                            <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Address</th>
-                            <th className="px-6 py-4 text-right text-sm font-medium text-gray-300">Reputation</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-purple-500/10">
-                        {users.length === 0 ? (
-                            <tr>
-                                <td colSpan={3} className="px-6 py-8 text-center text-gray-400">
-                                    No users yet
-                                </td>
-                            </tr>
-                        ) : (
-                            users.map((user, idx) => (
-                                <tr key={user.address} className="hover:bg-white/5 transition-colors">
-                                    <td className="px-6 py-4">
-                                        <span
-                                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${idx === 0
-                                                    ? 'bg-yellow-500/20 text-yellow-400'
-                                                    : idx === 1
-                                                        ? 'bg-gray-400/20 text-gray-300'
-                                                        : idx === 2
-                                                            ? 'bg-orange-500/20 text-orange-400'
-                                                            : 'bg-purple-500/20 text-purple-400'
-                                                }`}
-                                        >
-                                            {idx + 1}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 font-mono text-gray-300">
-                                        {user.address.slice(0, 6)}...{user.address.slice(-4)}
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <span className="text-lg font-semibold text-white">
-                                            {(Number(user.reputation) / 1e18).toFixed(2)}
-                                        </span>
-                                        <span className="text-sm text-gray-400 ml-2">REP</span>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+            {users.length === 0 ? (
+                <div className="card text-center">
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>👥</div>
+                    <h3 className="text-xl font-bold mb-2">No members yet</h3>
+                    <p className="opacity-70">Be the first to join and build reputation!</p>
+                </div>
+            ) : (
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                    {users.map((user, idx) => {
+                        const reputation = (Number(user.reputation) / 1e18).toFixed(2);
+                        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : null;
+
+                        return (
+                            <div
+                                key={user.address}
+                                className="card"
+                                style={{
+                                    borderColor: idx < 3 ? 'rgba(139, 92, 246, 0.3)' : undefined
+                                }}
+                            >
+                                <div className="flex items-center gap-4">
+                                    {/* Rank */}
+                                    <div style={{
+                                        width: '3rem',
+                                        height: '3rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: medal ? '2rem' : '1.25rem',
+                                        fontWeight: 'bold',
+                                        background: medal ? 'transparent' : 'rgba(255,255,255,0.1)',
+                                        borderRadius: '0.5rem'
+                                    }}>
+                                        {medal || `#${idx + 1}`}
+                                    </div>
+
+                                    {/* Address */}
+                                    <div style={{ flex: 1 }}>
+                                        <div className="font-semibold mb-1">
+                                            {user.address.slice(0, 8)}...{user.address.slice(-6)}
+                                        </div>
+                                        <div className="text-sm opacity-70">
+                                            {user.is_member ? '✓ Member' : 'Not a member'}
+                                        </div>
+                                    </div>
+
+                                    {/* Reputation */}
+                                    <div className="text-right">
+                                        <div className="text-2xl font-bold">{reputation}</div>
+                                        <div className="text-sm opacity-70">REP</div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            <div className="card mt-4" style={{ background: 'rgba(139, 92, 246, 0.1)' }}>
+                <div className="text-sm opacity-70">
+                    <p className="mb-1">💡 Earn reputation by successfully completing proposals</p>
+                    <p className="mb-1">🎯 Higher reputation grants more governance power</p>
+                    <p>⭐ Top performers are highlighted with medals</p>
+                </div>
             </div>
         </div>
     );

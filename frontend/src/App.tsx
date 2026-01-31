@@ -8,51 +8,52 @@ function App() {
   const [activeTab, setActiveTab] = useState<'feed' | 'submit' | 'leaderboard'>('feed');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <nav className="border-b border-purple-500/20 bg-black/20 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Covenant Protocol
-          </h1>
-          <ConnectButton />
+    <div style={{ minHeight: '100vh', paddingTop: '2rem', paddingBottom: '4rem' }}>
+      {/* Header */}
+      <header style={{ marginBottom: '3rem' }}>
+        <div className="container">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gradient mb-1">
+                ⚡ Covenant Protocol
+              </h1>
+              <p className="opacity-70">Decentralized Builder Engine</p>
+            </div>
+            <ConnectButton />
+          </div>
         </div>
-      </nav>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex gap-4 mb-8">
+      {/* Navigation Tabs */}
+      <div className="container mb-4">
+        <div className="flex gap-2" style={{ justifyContent: 'center', marginBottom: '3rem' }}>
           <button
             onClick={() => setActiveTab('feed')}
-            className={`px-6 py-2 rounded-lg font-medium transition-all ${activeTab === 'feed'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
-              : 'bg-white/10 text-gray-300 hover:bg-white/20'
-              }`}
+            className={activeTab === 'feed' ? 'btn btn-primary' : 'btn btn-secondary'}
           >
-            Idea Feed
+            📋 Idea Feed
           </button>
           <button
             onClick={() => setActiveTab('submit')}
-            className={`px-6 py-2 rounded-lg font-medium transition-all ${activeTab === 'submit'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
-              : 'bg-white/10 text-gray-300 hover:bg-white/20'
-              }`}
+            className={activeTab === 'submit' ? 'btn btn-primary' : 'btn btn-secondary'}
           >
-            Submit Idea
+            ✨ Submit Idea
           </button>
           <button
             onClick={() => setActiveTab('leaderboard')}
-            className={`px-6 py-2 rounded-lg font-medium transition-all ${activeTab === 'leaderboard'
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
-              : 'bg-white/10 text-gray-300 hover:bg-white/20'
-              }`}
+            className={activeTab === 'leaderboard' ? 'btn btn-primary' : 'btn btn-secondary'}
           >
-            Leaderboard
+            🏆 Leaderboard
           </button>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <main className="container">
         {activeTab === 'feed' && <IdeaFeed />}
         {activeTab === 'submit' && <SubmitForm />}
         {activeTab === 'leaderboard' && <Leaderboard />}
-      </div>
+      </main>
     </div>
   );
 }

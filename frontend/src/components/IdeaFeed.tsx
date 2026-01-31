@@ -19,8 +19,17 @@ interface Proposal {
     approval_count: number;
 }
 
+const statusConfig = {
+    0: { label: 'Pending', className: 'badge-pending' },
+    1: { label: 'Funded', className: 'badge-funded' },
+    2: { label: 'Delivered', className: 'badge-delivered' },
+    3: { label: 'Completed', className: 'badge-completed' },
+    4: { label: 'Failed', className: 'badge-failed' },
+};
+
 export default function IdeaFeed() {
     const [proposals, setProposals] = useState<Proposal[]>([]);
+    const [loading, setLoading] = useState(true);
     const { address } = useAccount();
     const { writeContract, data: hash } = useWriteContract();
     const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
@@ -41,8 +50,10 @@ export default function IdeaFeed() {
         try {
             const res = await axios.get(`${API_URL}/feed`);
             setProposals(res.data);
+            setLoading(false);
         } catch (err) {
             console.error('Failed to fetch proposals:', err);
+            setLoading(false);
         }
     };
 
@@ -56,75 +67,104 @@ export default function IdeaFeed() {
         });
     };
 
-    const statusLabels = ['Pending', 'Funded', 'Delivered', 'Completed', 'Failed'];
+    if (loading) {
+        return (
+            <div>
+                <h2 className="text-3xl font-bold text-gradient mb-4">💡 Idea Feed</h2>
+                <div className="card mb-3">Loading proposals...</div>
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-4">
-            <h2 className="text-3xl font-bold text-white mb-6">Idea Feed</h2>
+        <div>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-3xl font-bold text-gradient">💡 Idea Feed</h2>
+                <span className="opacity-70">{proposals.length} proposals</span>
+            </div>
+
             {proposals.length === 0 ? (
-                <p className="text-gray-400">No proposals yet. Be the first to submit!</p>
+                <div className="card text-center">
+                    <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🚀</div>
+                    <h3 className="text-xl font-bold mb-2">No proposals yet</h3>
+                    <p className="opacity-70">Be the first to submit an innovative idea!</p>
+                </div>
             ) : (
-                proposals.map((p) => (
-                    <div
-                        key={p.id}
-                        className="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6 hover:border-purple-500/40 transition-all"
-                    >
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 className="text-xl font-semibold text-white mb-2">{p.details}</h3>
-                                <p className="text-sm text-gray-400">
-                                    Submitter: {p.submitter.slice(0, 6)}...{p.submitter.slice(-4)}
-                                </p>
-                            </div>
-                            <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${p.status === 3
-                                    ? 'bg-green-500/20 text-green-400'
-                                    : p.status === 4
-                                        ? 'bg-red-500/20 text-red-400'
-                                        : 'bg-purple-500/20 text-purple-400'
-                                    }`}
-                            >
-                                {statusLabels[p.status]}
-                            </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div className="text-sm text-gray-300">
-                                <span className="font-medium">Bounty:</span> {(Number(p.requested_amount) / 1e18).toFixed(4)} ETH
-                                <span className="mx-4">•</span>
-                                <span className="font-medium">Approvals:</span> {p.approval_count}
-                            </div>
-                            {p.status === 0 && address && (
-                                <button
-                                    onClick={() => handleApprove(p.chain_id)}
-                                    disabled={isConfirming}
-                                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-all"
-                                >
-                                    {isConfirming ? 'Approving...' : 'Approve'}
-                                </button>
-                            )}
-                        </div>
+                <div style={{ display: 'grid', gap: '1.5rem' }}>
+                    {proposals.map((p) => {
+                        const status = statusConfig[p.status as keyof typeof statusConfig];
+                        return (
+                            <div key={p.id} className="card">
+                                {/* Header */}
+                                <div className="flex justify-between items-start mb-3">
+                                    <div style={{ flex: 1 }}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className={`badge ${status.className}`}>
+                                                {status.label}
+                                            </span>
+                                            <span className="text-sm opacity-50">#{p.chain_id}</span>
+                                        </div>
+                                        <h3 className="text-xl font-semibold mb-2">{p.details}</h3>
+                                        <p className="text-sm opacity-70">
+                                            By {p.submitter.slice(0, 6)}...{p.submitter.slice(-4)}
+                                        </p>
+                                    </div>
+                                </div>
 
-                        {p.proof && (
-                            <div className="mt-4 pt-4 border-t border-purple-500/20">
-                                <p className="text-sm text-gray-400">
-                                    <span className="font-medium">Proof:</span> <a href={p.proof} target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline">View Proof</a>
-                                </p>
-                            </div>
-                        )}
+                                {/* Stats */}
+                                <div className="flex gap-4 mb-3" style={{ padding: '1rem 0', borderTop: '1px solid rgba(255,255,255,0.1)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <div>
+                                        <div className="text-sm opacity-70 mb-1">Bounty</div>
+                                        <div className="font-bold">
+                                            {(Number(p.requested_amount) / 1e18).toFixed(4)} ETH
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm opacity-70 mb-1">Approvals</div>
+                                        <div className="font-bold">{p.approval_count}</div>
+                                    </div>
+                                </div>
 
-                        {/* Actions for Funded Status (Submit Proof) */}
-                        {p.status === 1 && !!address && p.submitter.toLowerCase() === address.toLowerCase() && (
-                            <div className="mt-4 pt-4 border-t border-purple-500/20">
-                                <ProofUpload proposalId={p.chain_id} />
-                            </div>
-                        )}
+                                {/* Actions */}
+                                <div className="flex gap-2">
+                                    {p.status === 0 && address && (
+                                        <button
+                                            onClick={() => handleApprove(p.chain_id)}
+                                            disabled={isConfirming}
+                                            className="btn btn-primary"
+                                        >
+                                            {isConfirming ? 'Approving...' : '👍 Approve'}
+                                        </button>
+                                    )}
+                                    {p.proof && (
+                                        <a
+                                            href={p.proof}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn btn-secondary"
+                                        >
+                                            📎 View Proof
+                                        </a>
+                                    )}
+                                </div>
 
-                        {/* Actions for Delivered Status (Resolution) */}
-                        {p.status === 2 && !!resolverAddress && !!address && (resolverAddress as string).toLowerCase() === address.toLowerCase() && (
-                            <ResolutionControl proposalId={p.chain_id} onResolve={fetchProposals} />
-                        )}
-                    </div>
-                ))
+                                {/* Proof Upload */}
+                                {p.status === 1 && !!address && p.submitter.toLowerCase() === address.toLowerCase() && (
+                                    <div className="mt-3" style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                                        <ProofUpload proposalId={p.chain_id} />
+                                    </div>
+                                )}
+
+                                {/* Resolution Control */}
+                                {p.status === 2 && !!resolverAddress && !!address && (resolverAddress as string).toLowerCase() === address.toLowerCase() && (
+                                    <div className="mt-3" style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                                        <ResolutionControl proposalId={p.chain_id} onResolve={fetchProposals} />
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
             )}
         </div>
     );
