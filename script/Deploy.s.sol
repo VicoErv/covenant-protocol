@@ -14,6 +14,9 @@ contract DeployScript is Script {
 
         CovenantJoin covenantJoin = new CovenantJoin();
         console.log("CovenantJoin deployed at:", address(covenantJoin));
+        
+        covenantJoin.setMembershipBond(0);
+        console.log("CovenantJoin: Membership bond set to 0 for test mode");
 
         ReputationLedger reputationLedger = new ReputationLedger();
         console.log("ReputationLedger deployed at:", address(reputationLedger));

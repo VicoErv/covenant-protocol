@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { parseEther } from 'viem';
 import BuilderEngineABI from '../abis/BuilderEngine.json';
 import CovenantJoinABI from '../abis/CovenantJoin.json';
@@ -14,12 +14,19 @@ export default function SubmitForm() {
     const { writeContract, data: hash } = useWriteContract();
     const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
 
+    const { data: isMember } = useReadContract({
+        address: COVENANT_JOIN_ADDRESS,
+        abi: CovenantJoinABI.abi,
+        functionName: 'isMember',
+        args: address ? [address] : undefined,
+    });
+
     const handleJoin = () => {
         writeContract({
             address: COVENANT_JOIN_ADDRESS,
             abi: CovenantJoinABI.abi,
             functionName: 'joinCovenant',
-            value: parseEther('0.01'),
+            value: 0n, // Set to 0 for test mode
         });
     };
 
@@ -45,17 +52,23 @@ export default function SubmitForm() {
                 </div>
             ) : (
                 <>
-                    <div className="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6 mb-6">
-                        <h3 className="text-lg font-semibold text-white mb-3">Not a member yet?</h3>
-                        <p className="text-gray-400 mb-4">Join the Covenant by depositing 0.01 ETH bond</p>
-                        <button
-                            onClick={handleJoin}
-                            disabled={isConfirming}
-                            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-all"
-                        >
-                            {isConfirming ? 'Joining...' : 'Join Covenant'}
-                        </button>
-                    </div>
+                    {isMember ? (
+                        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 mb-6 text-center">
+                            <p className="text-green-400 font-medium font-sm">✓ You are an active Covenant Member</p>
+                        </div>
+                    ) : (
+                        <div className="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6 mb-6 text-center">
+                            <h3 className="text-lg font-semibold text-white mb-2">Join the Covenant</h3>
+                            <p className="text-gray-400 mb-4">You need to join before submitting or approving ideas.</p>
+                            <button
+                                onClick={handleJoin}
+                                disabled={isConfirming}
+                                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg font-medium transition-all"
+                            >
+                                {isConfirming ? 'Joining...' : 'Join for Free (Test Mode)'}
+                            </button>
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="bg-white/5 backdrop-blur-sm border border-purple-500/20 rounded-lg p-6">
                         <div className="mb-4">

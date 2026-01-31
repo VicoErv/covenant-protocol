@@ -23,8 +23,8 @@ function App() {
           <button
             onClick={() => setActiveTab('feed')}
             className={`px-6 py-2 rounded-lg font-medium transition-all ${activeTab === 'feed'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
-                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
+              : 'bg-white/10 text-gray-300 hover:bg-white/20'
               }`}
           >
             Idea Feed
@@ -32,8 +32,8 @@ function App() {
           <button
             onClick={() => setActiveTab('submit')}
             className={`px-6 py-2 rounded-lg font-medium transition-all ${activeTab === 'submit'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
-                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
+              : 'bg-white/10 text-gray-300 hover:bg-white/20'
               }`}
           >
             Submit Idea
@@ -41,8 +41,8 @@ function App() {
           <button
             onClick={() => setActiveTab('leaderboard')}
             className={`px-6 py-2 rounded-lg font-medium transition-all ${activeTab === 'leaderboard'
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
-                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
+              : 'bg-white/10 text-gray-300 hover:bg-white/20'
               }`}
           >
             Leaderboard

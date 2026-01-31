@@ -12,6 +12,16 @@ docs/
 
 # Dotenv file
 .env
+frontend/.env
+
+# Logs and Temp
+*.log
+*.tar.gz
+
+# Backend data
+backend/data/
+backend/__pycache__/
+backend/proposals.db
 
 # IDE
 .idea/

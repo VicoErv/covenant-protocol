@@ -8,8 +8,8 @@ from database import SessionLocal, Proposal, User, engine
 
 # Configuration
 RPC_URL = os.getenv("RPC_URL", "http://127.0.0.1:8545")
-BUILDER_ENGINE_ADDRESS = os.getenv("BUILDER_ENGINE_ADDRESS")
-REPUTATION_LEDGER_ADDRESS = os.getenv("REPUTATION_LEDGER_ADDRESS")
+BUILDER_ENGINE_ADDRESS = Web3.to_checksum_address(os.getenv("BUILDER_ENGINE_ADDRESS")) if os.getenv("BUILDER_ENGINE_ADDRESS") else None
+REPUTATION_LEDGER_ADDRESS = Web3.to_checksum_address(os.getenv("REPUTATION_LEDGER_ADDRESS")) if os.getenv("REPUTATION_LEDGER_ADDRESS") else None
 
 if not BUILDER_ENGINE_ADDRESS:
     print("Warning: BUILDER_ENGINE_ADDRESS not set")
@@ -31,9 +31,12 @@ def load_abi(name):
 
 def get_contract(name, address):
     if not address:
+        print(f"Contract {name} address is missing", flush=True)
         return None
+    print(f"Loading contract {name} at {address}", flush=True)
+    chk_address = Web3.to_checksum_address(address)
     abi = load_abi(name)
-    return web3.eth.contract(address=address, abi=abi)
+    return web3.eth.contract(address=chk_address, abi=abi)
 
 def process_events(db: Session):
     builder_engine = get_contract("BuilderEngine", BUILDER_ENGINE_ADDRESS)
@@ -51,33 +54,33 @@ def process_events(db: Session):
     # Proper indexing is complex. I'll implement a simple "Listen Loop"
     
     # 1. ProposalSubmitted
-    logs = builder_engine.events.ProposalSubmitted.create_filter(fromBlock=0).get_all_entries()
+    logs = builder_engine.events.ProposalSubmitted().get_logs(from_block=0)
     for log in logs:
         handle_proposal_submitted(db, log)
         
     # 2. ProposalApproved
-    logs = builder_engine.events.ProposalApproved.create_filter(fromBlock=0).get_all_entries()
+    logs = builder_engine.events.ProposalApproved().get_logs(from_block=0)
     for log in logs:
         handle_proposal_approved(db, log)
 
     # 3. ProposalFunded
-    logs = builder_engine.events.ProposalFunded.create_filter(fromBlock=0).get_all_entries()
+    logs = builder_engine.events.ProposalFunded().get_logs(from_block=0)
     for log in logs:
         handle_proposal_funded(db, log)
         
     # 4. ProofSubmitted
-    logs = builder_engine.events.ProofSubmitted.create_filter(fromBlock=0).get_all_entries()
+    logs = builder_engine.events.ProofSubmitted().get_logs(from_block=0)
     for log in logs:
         handle_proof_submitted(db, log)
 
     # 5. ProposalResolved
-    logs = builder_engine.events.ProposalResolved.create_filter(fromBlock=0).get_all_entries()
+    logs = builder_engine.events.ProposalResolved().get_logs(from_block=0)
     for log in logs:
         handle_proposal_resolved(db, log)
 
     # Reputation Updates
     if rep_ledger:
-        logs = rep_ledger.events.ReputationUpdated.create_filter(fromBlock=0).get_all_entries()
+        logs = rep_ledger.events.ReputationUpdated().get_logs(from_block=0)
         for log in logs:
             handle_reputation_updated(db, log)
 
@@ -155,14 +158,14 @@ def handle_reputation_updated(db: Session, log):
     db.commit()
 
 def start_indexer():
-    print("Indexer started...")
+    print("Indexer started...", flush=True)
     while True:
         try:
             db = SessionLocal()
             process_events(db)
             db.close()
         except Exception as e:
-            print(f"Indexer error: {e}")
+            print(f"Indexer error: {e}", flush=True)
         time.sleep(5) # Poll every 5s
 
 if __name__ == "__main__":

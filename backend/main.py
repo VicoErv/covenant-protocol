@@ -1,11 +1,22 @@
 from fastapi import FastAPI, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
 from database import SessionLocal, init_db, Proposal, User
-# from .indexer import start_indexer # Will implement later
+from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import os
+import threading
+from indexer import start_indexer
 
 app = FastAPI()
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # For development, allowing all. Can be restricted to ["http://localhost:3000"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Dependency
 def get_db():
@@ -18,7 +29,9 @@ def get_db():
 @app.on_event("startup")
 def startup_event():
     init_db()
-    # start_indexer() # Background task
+    # Start indexer in a separate thread
+    indexer_thread = threading.Thread(target=start_indexer, daemon=True)
+    indexer_thread.start()
 
 @app.get("/")
 def read_root():

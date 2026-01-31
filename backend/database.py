@@ -1,7 +1,9 @@
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, Float
 from sqlalchemy.orm import sessionmaker, declarative_base
+import os
 
-SQL_ALCHEMY_DATABASE_URL = "sqlite:///./covenant.db"
+DB_PATH = os.getenv("DB_PATH", "./proposals.db")
+SQL_ALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
 
 engine = create_engine(SQL_ALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

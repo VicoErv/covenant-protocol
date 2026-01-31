@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 contract CovenantJoin {
     mapping(address => bool) public isMember;
-    uint256 public constant MEMBERSHIP_BOND = 0.01 ether;
+    uint256 public membershipBond = 0.01 ether;
 
     address public builderEngine;
     address public owner;
@@ -19,9 +19,14 @@ contract CovenantJoin {
         builderEngine = _builderEngine;
     }
 
+    function setMembershipBond(uint256 _membershipBond) external {
+        require(msg.sender == owner, "Only owner");
+        membershipBond = _membershipBond;
+    }
+
     function joinCovenant() external payable {
         require(!isMember[msg.sender], "Already a member");
-        require(msg.value == MEMBERSHIP_BOND, "Incorrect bond amount");
+        require(msg.value == membershipBond, "Incorrect bond amount");
 
         isMember[msg.sender] = true;
         
