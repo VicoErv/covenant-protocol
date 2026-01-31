@@ -15,7 +15,7 @@ export default function ProofUpload({ proposalId }: ProofUploadProps) {
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [proofUrl, setProofUrl] = useState('');
-    const { writeContract, data: hash } = useWriteContract();
+    const { writeContract, data: hash, error } = useWriteContract();
     const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,6 +91,17 @@ export default function ProofUpload({ proposalId }: ProofUploadProps) {
                     <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
                         <p className="text-sm text-green-400">
                             ✓ Proof uploaded: <a href={proofUrl} target="_blank" rel="noopener noreferrer" className="underline">{proofUrl}</a>
+                        </p>
+                    </div>
+                )}
+
+                {error && (
+                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                        <p className="text-sm text-red-400 font-medium">
+                            Status: Transaction Failed
+                        </p>
+                        <p className="text-xs text-red-400/70 mt-1">
+                            {error.message.split('\n')[0]}
                         </p>
                     </div>
                 )}
