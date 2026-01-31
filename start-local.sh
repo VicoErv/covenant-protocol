@@ -38,6 +38,11 @@ EOF
 
 # 4. Start Docker Services
 echo "🐳 Starting Docker services (Backend & Frontend)..."
+# Wipe state for consistency on reset
+rm -f backend/data/proposals.db
+rm -rf backend/uploads/*
+mkdir -p backend/uploads
+
 docker compose up -d --build
 
 echo "✨ All systems go!"
