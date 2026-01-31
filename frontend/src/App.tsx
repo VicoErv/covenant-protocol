@@ -1,5 +1,5 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount, useReadContract } from 'wagmi';
+import { formatEther } from 'viem';
 import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import IdeaFeed from './components/IdeaFeed';
