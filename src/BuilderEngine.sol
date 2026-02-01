@@ -106,12 +106,18 @@ contract BuilderEngine {
     function approveProposal(uint256 proposalId) external onlyMember {
         Proposal storage p = proposals[proposalId];
         require(p.status == Status.Pending, "NotPending");
-        require(p.submitter != msg.sender || msg.sender == 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 || msg.sender == 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, "CannotVoteSelf");
+        require(
+            p.submitter != msg.sender || msg.sender == 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+                || msg.sender == 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266,
+            "CannotVoteSelf"
+        );
         require(!p.approvals[msg.sender], "AlreadyVoted");
 
         uint256 rep = reputationLedger.getReputation(msg.sender);
         require(
-            rep >= MIN_REP_TO_VOTE || msg.sender == 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 || msg.sender == 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266, "InsufficientReputation"
+            rep >= MIN_REP_TO_VOTE || msg.sender == 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+                || msg.sender == 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266,
+            "InsufficientReputation"
         );
 
         p.approvals[msg.sender] = true;
