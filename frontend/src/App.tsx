@@ -1,5 +1,5 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useBlockNumber } from 'wagmi';
 import { formatEther } from 'viem';
 import { useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
@@ -18,14 +18,15 @@ function App() {
   const { writeContract, data: hash, error } = useWriteContract();
   const { isLoading: isJoining, isSuccess: joinedSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const { data: reputation } = useReadContract({
+  const { data: blockNumber } = useBlockNumber({ watch: true });
+
+  const { data: reputation, refetch: refetchReputation } = useReadContract({
     address: REPUTATION_LEDGER_ADDRESS,
     abi: ReputationLedgerABI.abi,
     functionName: 'getReputation',
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
-      refetchInterval: 10000, // Sync every 10s
     }
   });
 
@@ -36,9 +37,16 @@ function App() {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
-      refetchInterval: 10000,
     }
   });
+
+  // Sync with blockchain on every new block
+  useEffect(() => {
+    if (blockNumber) {
+      refetchReputation();
+      refetchMember();
+    }
+  }, [blockNumber, refetchReputation, refetchMember]);
 
   useEffect(() => {
     if (joinedSuccess) {

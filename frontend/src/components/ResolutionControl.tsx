@@ -29,11 +29,12 @@ export default function ResolutionControl({ proposalId, onResolve }: ResolutionC
 
     useEffect(() => {
         if (isSuccess) {
+            console.log('Resolution successful, invalidating queries...', proposalId);
             // Invalidate everything to ensure reputation and feed are fresh
             queryClient.invalidateQueries();
             if (onResolve) onResolve();
         }
-    }, [isSuccess, queryClient, onResolve]);
+    }, [isSuccess, queryClient, onResolve, proposalId]);
 
     return (
         <div className="mt-4 p-4 bg-purple-900/20 border border-purple-500/30 rounded-lg">
