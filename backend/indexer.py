@@ -135,15 +135,22 @@ def handle_proposal_funded(db: Session, log):
     pid = log.args.id
     proposal = db.query(Proposal).filter(Proposal.chain_id == pid).first()
     if proposal:
+        print(f"Proposal {pid} funded. Status: {proposal.status} -> 1", flush=True)
         proposal.status = 1 # Funded
         db.commit()
 
 def handle_proof_submitted(db: Session, log):
     pid = log.args.id
+    # proof is bytes32 in contract, web3.py returns as bytes or hex string
     proof = log.args.proof
+    if isinstance(proof, bytes):
+        proof = proof.hex()
+    
+    proof_str = f"0x{proof}" if not proof.startswith("0x") else proof
+    
     proposal = db.query(Proposal).filter(Proposal.chain_id == pid).first()
     if proposal:
-        proposal.proof = proof
+        proposal.proof = proof_str
         proposal.status = 2 # Delivered
         db.commit()
 

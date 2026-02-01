@@ -9,6 +9,10 @@ services:
       - BUILDER_ENGINE_ADDRESS=${BUILDER_ENGINE_ADDRESS}
       - REPUTATION_LEDGER_ADDRESS=${REPUTATION_LEDGER_ADDRESS}
       - COVENANT_JOIN_ADDRESS=${COVENANT_JOIN_ADDRESS}
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET=proofs
       - DB_PATH=/app/data/proposals.db
     volumes:
       - ./backend/data:/app/data
@@ -16,6 +20,21 @@ services:
       - ./backend/uploads:/app/uploads
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    depends_on:
+      - minio
+
+  # 1.1 MinIO Object Storage
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
 
   # 2. Frontend Web App
   frontend:
@@ -26,6 +45,8 @@ services:
         - VITE_BUILDER_ENGINE_ADDRESS=${BUILDER_ENGINE_ADDRESS}
         - VITE_COVENANT_JOIN_ADDRESS=${COVENANT_JOIN_ADDRESS}
         - VITE_REPUTATION_LEDGER_ADDRESS=${REPUTATION_LEDGER_ADDRESS}
+        - VITE_MINIO_ENDPOINT=http://localhost:9000
+        - VITE_MINIO_BUCKET=proofs
     ports:
       - "3000:80" # Map host 3000 to nginx 80
     environment:
@@ -33,5 +54,10 @@ services:
       - VITE_BUILDER_ENGINE_ADDRESS=${BUILDER_ENGINE_ADDRESS}
       - VITE_COVENANT_JOIN_ADDRESS=${COVENANT_JOIN_ADDRESS}
       - VITE_REPUTATION_LEDGER_ADDRESS=${REPUTATION_LEDGER_ADDRESS}
+      - VITE_MINIO_ENDPOINT=http://localhost:9000
+      - VITE_MINIO_BUCKET=proofs
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+volumes:
+  minio_data:

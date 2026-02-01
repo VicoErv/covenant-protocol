@@ -29,12 +29,22 @@ export COVENANT_JOIN_ADDRESS=$(jq -r '.transactions[] | select(.contractName == 
 export REPUTATION_LEDGER_ADDRESS=$(jq -r '.transactions[] | select(.contractName == "ReputationLedger") | .contractAddress' $RUN_FILE | head -n 1)
 export BUILDER_ENGINE_ADDRESS=$(jq -r '.transactions[] | select(.contractName == "BuilderEngine") | .contractAddress' $RUN_FILE | head -n 1)
 
-# Create frontend .env for native dev as well
+# Create root .env for docker compose
+cat <<EOF > .env
+RPC_URL=http://host.docker.internal:8545
+COVENANT_JOIN_ADDRESS=$COVENANT_JOIN_ADDRESS
+REPUTATION_LEDGER_ADDRESS=$REPUTATION_LEDGER_ADDRESS
+BUILDER_ENGINE_ADDRESS=$BUILDER_ENGINE_ADDRESS
+EOF
+
+# Create frontend .env for reactive dev as well
 cat <<EOF > frontend/.env
 VITE_API_URL=http://localhost:8000
 VITE_BUILDER_ENGINE_ADDRESS=$BUILDER_ENGINE_ADDRESS
 VITE_COVENANT_JOIN_ADDRESS=$COVENANT_JOIN_ADDRESS
 VITE_REPUTATION_LEDGER_ADDRESS=$REPUTATION_LEDGER_ADDRESS
+VITE_MINIO_ENDPOINT=http://localhost:9000
+VITE_MINIO_BUCKET=proofs
 EOF
 
 # 4. Start Docker Services
