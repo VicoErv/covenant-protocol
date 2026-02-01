@@ -36,15 +36,16 @@ export default function ProofUpload({ proposalId }: ProofUploadProps) {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
+            const uploadedHash = res.data.hash; // bytes32 hex string from backend
             const uploadedUrl = res.data.url;
             setProofUrl(uploadedUrl);
 
-            // Submit proof to contract
+            // Submit proof hash to contract
             writeContract({
                 address: BUILDER_ENGINE_ADDRESS,
                 abi: BuilderEngineABI.abi,
                 functionName: 'submitProof',
-                args: [BigInt(proposalId), uploadedUrl],
+                args: [BigInt(proposalId), uploadedHash as `0x${string}`],
             });
         } catch (err) {
             console.error('Upload failed:', err);
@@ -100,8 +101,8 @@ export default function ProofUpload({ proposalId }: ProofUploadProps) {
                         <p className="text-sm text-red-400 font-medium">
                             Status: Transaction Failed
                         </p>
-                        <p className="text-xs text-red-400/70 mt-1">
-                            {error.message.split('\n')[0]}
+                        <p className="text-xs text-red-400/70 mt-1" style={{ wordBreak: 'break-word' }}>
+                            {error.message}
                         </p>
                     </div>
                 )}
