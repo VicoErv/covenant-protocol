@@ -1,40 +1,16 @@
-import { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useState } from 'react';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import BuilderEngineABI from '../abis/BuilderEngine.json';
-import CovenantJoinABI from '../abis/CovenantJoin.json';
 
 const BUILDER_ENGINE_ADDRESS = import.meta.env.VITE_BUILDER_ENGINE_ADDRESS as `0x${string}`;
-const COVENANT_JOIN_ADDRESS = import.meta.env.VITE_COVENANT_JOIN_ADDRESS as `0x${string}`;
 
 export default function SubmitForm() {
     const [details, setDetails] = useState('');
     const [amount, setAmount] = useState('');
     const { address } = useAccount();
     const { writeContract, data: hash } = useWriteContract();
-    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-    const { data: isMember, refetch } = useReadContract({
-        address: COVENANT_JOIN_ADDRESS,
-        abi: CovenantJoinABI.abi,
-        functionName: 'isMember',
-        args: address ? [address] : undefined,
-    });
-
-    useEffect(() => {
-        if (isSuccess) {
-            refetch();
-        }
-    }, [isSuccess, refetch]);
-
-    const handleJoin = () => {
-        writeContract({
-            address: COVENANT_JOIN_ADDRESS,
-            abi: CovenantJoinABI.abi,
-            functionName: 'joinCovenant',
-            value: 0n,
-        });
-    };
+    const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -60,32 +36,6 @@ export default function SubmitForm() {
                 </div>
             ) : (
                 <>
-                    {/* Membership Status */}
-                    {isMember ? (
-                        <div className="card mb-3" style={{ background: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.3)' }}>
-                            <div className="flex items-center gap-3">
-                                <span style={{ fontSize: '2rem' }}>✓</span>
-                                <div>
-                                    <div className="font-bold" style={{ color: '#4ade80' }}>Active Member</div>
-                                    <div className="text-sm opacity-70">You can submit and approve proposals</div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="card mb-3 text-center">
-                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🤝</div>
-                            <h3 className="text-lg font-bold mb-2">Join the Covenant</h3>
-                            <p className="opacity-70 mb-3">Become a member to submit ideas</p>
-                            <button
-                                onClick={handleJoin}
-                                disabled={isConfirming}
-                                className="btn btn-primary"
-                            >
-                                {isConfirming ? 'Joining...' : '🚀 Join for Free'}
-                            </button>
-                        </div>
-                    )}
-
                     {/* Submission Form */}
                     <form onSubmit={handleSubmit} className="card">
                         <div className="mb-3">

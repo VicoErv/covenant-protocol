@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { formatEther } from 'viem';
 import { Coins, TrendingUp } from 'lucide-react';
 import BuilderEngineABI from '../abis/BuilderEngine.json';
+import CovenantJoinABI from '../abis/CovenantJoin.json';
 import ProofUpload from './ProofUpload';
 import ResolutionControl from './ResolutionControl';
 
@@ -31,8 +32,15 @@ const statusConfig = {
 
 export default function IdeaFeed() {
     const { address } = useAccount();
-    const { writeContract, data: hash } = useWriteContract();
+    const { writeContract, data: hash, error } = useWriteContract();
     const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash });
+
+    const { data: isMember } = useReadContract({
+        address: import.meta.env.VITE_COVENANT_JOIN_ADDRESS as `0x${string}`,
+        abi: CovenantJoinABI.abi,
+        functionName: 'isMember',
+        args: address ? [address] : undefined,
+    });
 
     const { data: resolverAddress } = useReadContract({
         address: BUILDER_ENGINE_ADDRESS,
@@ -126,25 +134,30 @@ export default function IdeaFeed() {
                                 {/* Actions */}
                                 <div className="flex gap-2">
                                     {p.status === 0 && address && (
-                                        <button
-                                            onClick={() => handleApprove(p.chain_id)}
-                                            disabled={isConfirming}
-                                            className="btn btn-primary"
-                                        >
-                                            {isConfirming ? 'Approving...' : '👍 Approve'}
-                                        </button>
-                                    )}
-                                    {p.proof && (
-                                        <a
-                                            href={p.proof}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="btn btn-secondary"
-                                        >
-                                            📎 View Proof
-                                        </a>
+                                        <div className="flex flex-col gap-2 w-full sm:w-auto">
+                                            <button
+                                                onClick={() => handleApprove(p.chain_id)}
+                                                disabled={isConfirming || !isMember}
+                                                className="btn btn-primary"
+                                                title={!isMember ? "Join the Covenant to approve" : ""}
+                                            >
+                                                {isConfirming ? 'Approving...' : '👍 Approve'}
+                                            </button>
+                                            {!isMember && (
+                                                <span className="text-xs text-yellow-500 opacity-70">
+                                                    Membership required
+                                                </span>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
+
+                                {error && (
+                                    <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                                        <p className="text-sm text-red-400 font-medium">Transaction Failed</p>
+                                        <p className="text-xs text-red-400/70 mt-1">{error.message.split('\n')[0]}</p>
+                                    </div>
+                                )}
 
                                 {/* Proof Upload */}
                                 {p.status === 1 && !!address && p.submitter.toLowerCase() === address.toLowerCase() && (
