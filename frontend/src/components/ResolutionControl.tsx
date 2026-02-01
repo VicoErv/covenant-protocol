@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, XCircle } from 'lucide-react';
 import BuilderEngineABI from '../abis/BuilderEngine.json';
 
@@ -11,6 +12,7 @@ interface ResolutionControlProps {
 }
 
 export default function ResolutionControl({ proposalId, onResolve }: ResolutionControlProps) {
+    const queryClient = useQueryClient();
     const { writeContract, data: hash } = useWriteContract();
     const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
     const [action, setAction] = useState<'approve' | 'reject' | null>(null);
@@ -25,9 +27,13 @@ export default function ResolutionControl({ proposalId, onResolve }: ResolutionC
         });
     };
 
-    if (isSuccess && onResolve) {
-        onResolve();
-    }
+    useEffect(() => {
+        if (isSuccess) {
+            // Invalidate everything to ensure reputation and feed are fresh
+            queryClient.invalidateQueries();
+            if (onResolve) onResolve();
+        }
+    }, [isSuccess, queryClient, onResolve]);
 
     return (
         <div className="mt-4 p-4 bg-purple-900/20 border border-purple-500/30 rounded-lg">

@@ -25,6 +25,7 @@ function App() {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
+      refetchInterval: 10000, // Sync every 10s
     }
   });
 
@@ -35,6 +36,7 @@ function App() {
     args: address ? [address] : undefined,
     query: {
       enabled: !!address,
+      refetchInterval: 10000,
     }
   });
 
